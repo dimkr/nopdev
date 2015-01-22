@@ -1,0 +1,40 @@
+                       _
+ _ __   ___  _ __   __| | _____   __
+| '_ \ / _ \| '_ \ / _` |/ _ \ \ / /
+| | | | (_) | |_) | (_| |  __/\ V /
+|_| |_|\___/| .__/ \__,_|\___| \_/
+            |_|
+
+Overview
+========
+
+nopdev is an extremely minimalistic Linux (https://www.kernel.org/) device
+manager in the spirit of smdev (http://git.2f30.org/smdev/), but even simpler.
+
+It is designed for monolithic kernels (i.e ones built without module loading
+support) and requires a devtmpfs file system mounted at /dev.
+
+nopdev does nothing except changing the ownership and permissions of device
+nodes. It does not create device nodes and backwards-compatibility symlinks or
+rename network interfaces.
+
+Building
+========
+
+Copy config.def.h to config.h, modify it to your liking, then run:
+  make
+
+Usage
+=====
+
+To use nopdev it, register it as the hotplug helper:
+  echo /path/to/nopdev > /proc/sys/kernel/hotplug
+
+Credits and Legal Information
+=============================
+
+nopdev itself is free and unencumbered software released under the terms of the
+MIT license; see COPYING for the license text. For a list of its authors and
+contributors, see AUTHORS.
+
+The ASCII art logo at the top was made using FIGlet (http://www.figlet.org/).
