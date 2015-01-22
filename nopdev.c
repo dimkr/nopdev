@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
 		if (-1 == chdir(_PATH_DEV))
 			break;
 
-		openlog(PROG, LOG_NDELAY | LOG_PID, LOG_USER);
+		openlog("nopdev", LOG_NDELAY | LOG_PID, LOG_USER);
 		syslog(LOG_INFO, "handling %s event for %s\n", act, evt.dev);
 
 		if (true == evt_types[i].cb(&evt))

@@ -27,8 +27,8 @@ Copy config.def.h to config.h, modify it to your liking, then run:
 Usage
 =====
 
-To use nopdev it, register it as the hotplug helper:
-  echo /path/to/nopdev > /proc/sys/kernel/hotplug
+To start nopdev, use the helper script:
+  start-nopdev
 
 Credits and Legal Information
 =============================
