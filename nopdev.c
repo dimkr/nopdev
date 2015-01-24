@@ -35,6 +35,7 @@
 #include <pwd.h>
 #include <grp.h>
 #include <syslog.h>
+#include <sys/wait.h>
 
 #define RDONLY_MODE (S_IRUSR | S_IRGRP | S_IROTH)
 #define WRONLY_MODE (S_IWUSR | S_IWGRP | S_IWOTH)
@@ -58,10 +59,67 @@ static const struct dev_rule rules[] = {
 #include "config.h"
 };
 
-static bool apply_rules(const struct dev_event *evt)
+static bool load_module(void)
+{
+	const char *alias;
+	pid_t pid;
+
+	/* if the device has a module alias, load the appropriate module */
+	alias = getenv("MODALIAS");
+	if (NULL != alias) {
+		pid = fork();
+		switch (pid) {
+			case 0:
+				/* no need to call closelog() - FD_CLOEXEC should be
+				 * set */
+				(void) execlp("modprobe",
+				              "modprobe",
+				              "-s",
+				              alias,
+				              (char *) NULL);
+				exit(EXIT_FAILURE);
+
+			case (-1):
+				return false;
+
+			default:
+				if (pid != waitpid(pid, NULL, 0))
+					return false;
+		}
+	}
+
+	return true;
+}
+
+static bool apply_rule(const struct dev_event *evt, const struct dev_rule *rule)
 {
 	struct passwd *user;
 	struct group *grp;
+
+	/* set the device node ownership and permissions */
+	user = getpwnam(rule->user);
+	if (NULL == user) {
+		syslog(LOG_ERR, "failed to obtain the UID of %s\n", rule->user);
+		return false;
+	}
+
+	grp = getgrnam(rule->grp);
+	if (NULL == grp) {
+		syslog(LOG_ERR, "failed to obtain the GID of %s\n", rule->grp);
+		return false;
+	}
+
+	if (-1 == chown(evt->dev, user->pw_uid, grp->gr_gid))
+		return false;
+
+	if (-1 == chmod(evt->dev, rule->mode))
+		return false;
+
+	return true;
+}
+
+static bool apply_rules(const struct dev_event *evt)
+{
 	unsigned int i;
 
 	for (i = 0; sizeof(rules) / sizeof(rules[0]) > i; ++i) {
@@ -70,29 +128,13 @@ static bool apply_rules(const struct dev_event *evt)
 				continue;
 
 			case 0:
-				user = getpwnam(rules[i].user);
-				if (NULL == user) {
-					syslog(LOG_ERR,
-					       "failed to obtain the UID of %s\n",
-					       rules[i].user);
-					return false;
-				}
-
-				grp = getgrnam(rules[i].grp);
-				if (NULL == grp) {
-					syslog(LOG_ERR,
-					       "failed to obtain the GID of %s\n",
-					       rules[i].grp);
-					return false;
-				}
-
-				if (-1 == chown(evt->dev, user->pw_uid, grp->gr_gid))
+				if (false == apply_rule(evt, &rules[i]))
 					return false;
 
-				if (-1 == chmod(evt->dev, rules[i].mode))
+				if (false == load_module())
 					return false;
 
-				return true;
+				break;
 
 			default:
 				return false;

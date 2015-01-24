@@ -11,12 +11,11 @@ Overview
 nopdev is an extremely minimalistic Linux (https://www.kernel.org/) device
 manager in the spirit of smdev (http://git.2f30.org/smdev/), but even simpler.
 
-It is designed for monolithic kernels (i.e ones built without module loading
-support) and requires a devtmpfs file system mounted at /dev.
+nopdev does nothing except module loading (via modprobe) and changing the
+ownership and permissions of device nodes.
 
-nopdev does nothing except changing the ownership and permissions of device
-nodes. It does not create device nodes and backwards-compatibility symlinks or
-rename network interfaces.
+nopdev requires a devtmpfs file system mounted at /dev. It does not create
+device nodes and backwards-compatibility symlinks or rename network interfaces.
 
 Building
 ========
